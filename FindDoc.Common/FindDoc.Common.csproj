@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Auth\" />
+    <Folder Include="Dtos\" />
+    <Folder Include="Dtos\UserDto\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FindDoc.Data\FindDoc.Data.csproj" />
+  </ItemGroup>
+</Project>
