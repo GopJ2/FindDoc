@@ -26,5 +26,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Controllers\Auth\" />
+    <Folder Include="ClientApp\" />
   </ItemGroup>
 </Project>
