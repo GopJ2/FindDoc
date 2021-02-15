@@ -8,5 +8,6 @@ namespace FindDoc.Services.Auth
     {
         public Task<AuthResponse> RegisterPatientAsync(RegisterModel model);
         public Task<AuthResponse> RegisterDoctorAsync(RegisterModel model);
+        public Task<AuthResponse> LoginAsync(LoginModel model);
     }
 }

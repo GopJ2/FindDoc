@@ -20,16 +20,42 @@ namespace FinddocBE.Controllers.Auth
 
         [HttpPost]
         [Route("registerPatient")]
-        public async Task<AuthResponse> RegisterPatientAsync(RegisterModel model)
+        public async Task<IActionResult> RegisterPatientAsync(RegisterModel model)
         {
-            return await _authService.RegisterPatientAsync(model);
+            try
+            {
+                return Ok(await _authService.RegisterPatientAsync(model));
+            }catch(Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
         [HttpPost]
         [Route("registerDoctor")]
-        public async Task<AuthResponse> RegisterDoctorAsync(RegisterModel model)
+        public async Task<IActionResult> RegisterDoctorAsync(RegisterModel model)
         {
-            return await _authService.RegisterDoctorAsync(model);
+            try
+            {
+                return Ok(await _authService.RegisterDoctorAsync(model));
+            }catch(Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
+
+        [HttpPost]
+        [Route("login")]
+        public async Task<IActionResult> LoginAsync(LoginModel model)
+        {
+            try
+            {
+                return Ok(await _authService.LoginAsync(model));
+            }catch(Exception)
+            {
+                return Unauthorized();
+            }
+        }
+
     }
 }

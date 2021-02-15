@@ -1,10 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using FindDoc.Common.Auth;
 using FindDoc.Common.Dtos.UserDto;
 using FindDoc.Data.Entity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 
 namespace FindDoc.Services.Auth
 {
@@ -21,11 +26,55 @@ namespace FindDoc.Services.Auth
             _configuration = configuration;
         }
 
+        public async Task<AuthResponse> LoginAsync(LoginModel model)
+        {
+            var user = await _userManager.FindByNameAsync(model.Username);
+            if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+            {
+                var userRoles = await _userManager.GetRolesAsync(user);
+
+                var authClaims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                };
+
+                foreach (var userRole in userRoles)
+                {
+                    authClaims.Add(new Claim(ClaimTypes.Role, userRole));
+                }
+
+                var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+
+                var token = new JwtSecurityToken(
+                    issuer: _configuration["JWT:ValidIssuer"],
+                    audience: _configuration["JWT:ValidAudience"],
+                    expires: DateTime.Now.AddHours(3),
+                    claims: authClaims,
+                    signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+                    );
+
+                return new AuthResponse
+                {
+                    Token = new JwtSecurityTokenHandler().WriteToken(token),
+                    Expiration = token.ValidTo,
+                    User = new UserDto
+                    {
+                        Email = user.Email,
+                        Name = user.UserName,
+                        Id = user.Id
+                    }
+                };
+            }
+
+            throw new Exception("Unauthorized");
+        }
+
         public async Task<AuthResponse> RegisterPatientAsync(RegisterModel model)
         {
             var userExists = await _userManager.FindByNameAsync(model.Username);
             if (userExists != null)
-                return new AuthResponse { Status = "Error", Message = "User already exists!" };
+                throw new Exception("User already exists!");
 
             ApplicationUser user = new ApplicationUser()
             {
@@ -35,7 +84,7 @@ namespace FindDoc.Services.Auth
             };
             var result = await _userManager.CreateAsync(user, model.Password);
             if (!result.Succeeded) {
-                return new AuthResponse { Status = "Error", Message = "User creation failed! Please check user details and try again." };
+                throw new Exception("User creation failed! Please check user details and try again.");
             }
 
             if (!await _roleManager.RoleExistsAsync(UserRoles.Patient))
@@ -53,7 +102,7 @@ namespace FindDoc.Services.Auth
         {
             var userExists = await _userManager.FindByNameAsync(model.Username);
             if (userExists != null)
-                return new AuthResponse { Status = "Error", Message = "User already exists!" };
+                throw new Exception("User already exists!");
 
             ApplicationUser user = new ApplicationUser()
             {
@@ -63,7 +112,7 @@ namespace FindDoc.Services.Auth
             };
             var result = await _userManager.CreateAsync(user, model.Password);
             if (!result.Succeeded)
-                return new AuthResponse { Status = "Error", Message = "User creation failed! Please check user details and try again." };
+                throw new Exception("User creation failed! Please check user details and try again.");
 
             if (!await _roleManager.RoleExistsAsync(UserRoles.Doctor))
                 await _roleManager.CreateAsync(new IdentityRole(UserRoles.Doctor));
